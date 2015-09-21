@@ -76,10 +76,13 @@ RUN apt-get clean\
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # remove Graphite files older than 2 hours
-RUN (crontab -l ; echo "*/5 * * * * if [ -n \"\$DELETE_OLD_FILES\" ]; then find /opt/graphite/storage/whisper/etleap -type f -mmin +120 -delete; fi") | crontab -
+RUN (crontab -l ; echo "*/5 * * * * source /opt/env.saved && if [ -n \"\$DELETE_OLD_FILES\" ]; then find /opt/graphite/storage/whisper/etleap -type f -mmin +120 -delete; fi") | crontab -
+RUN apt-get -y update && apt-get -y --force-yes install supervisor
+COPY supervisor.conf /etc/supervisor/conf.d/graphite.conf
 
 # defaults
 EXPOSE 80:80 2003:2003 8125:8125/udp
 VOLUME ["/opt/graphite", "/etc/nginx", "/opt/statsd", "/etc/logrotate.d", "/var/log"]
 ENV HOME /root
-CMD ["/sbin/my_init"]
+ENTRYPOINT ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/supervisord.conf"]
+CMD []
